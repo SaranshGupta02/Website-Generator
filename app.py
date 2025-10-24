@@ -1,16 +1,29 @@
+# app.py
 import streamlit as st
 from langchain_openai import ChatOpenAI
 import os
 
 # ========== Setup ==========
 
-st.set_page_config(page_title="🌐 Qwen Website Generator", layout="centered")
-
+st.set_page_config(page_title="🌐 Website Generator (Cerebras)", layout="centered")
 
 st.sidebar.header("⚙️ Configuration")
 
-api_key = st.sidebar.text_input("Enter your OpenRouter API Key", type="password")
-model_name = st.sidebar.selectbox("Model", ["qwen/qwen3-coder","qwen/qwen-2.5-72b-instruct","qwen/qwen-2.5-7b-instruct","qwen/qwen-2.5-coder-32b-instruct"], index=0)
+# Cerebras API key + models
+api_key = st.sidebar.text_input("Enter your Cerebras API Key", type="password")
+model_name = st.sidebar.selectbox(
+    "Model",
+    [
+        # Solid production picks; adjust as you like
+        "gpt-oss-120b",
+        "qwen-3-32b",
+        "llama-3.3-70b"
+        
+        
+      
+    ],
+    index=0,
+)
 
 st.sidebar.divider()
 
@@ -25,9 +38,9 @@ site_preset = st.sidebar.selectbox(
         "Restaurant Page",
         "Event/Conference Page",
         "Simple Blog Home",
-        "SaaS Marketing Page"
+        "SaaS Marketing Page",
     ],
-    index=0
+    index=0,
 )
 style_preset = st.sidebar.selectbox(
     "Style",
@@ -37,24 +50,25 @@ style_preset = st.sidebar.selectbox(
         "Professional & Corporate",
         "Dark Theme",
         "Neumorphic",
-        "Glassmorphism"
+        "Glassmorphism",
     ],
-    index=0
+    index=0,
 )
-
 
 st.sidebar.divider()
 st.sidebar.markdown(
     "**❤️ Built by** [Build Fast with AI](https://buildfastwithai.com/genai-course)",
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 @st.cache_resource(show_spinner=False)
 def get_llm(api_key, model_name):
+    # Cerebras exposes an OpenAI-compatible API, so we can keep ChatOpenAI
+    # and just change the base URL.
     return ChatOpenAI(
         model=model_name,
         openai_api_key=api_key,
-        openai_api_base="https://openrouter.ai/api/v1"
+        openai_api_base="https://api.cerebras.ai/v1",
     )
 
 # ========== Session State ==========
@@ -64,7 +78,7 @@ if "site_code" not in st.session_state:
     st.session_state.site_code = ""
 
 # ========== UI Header ==========
-st.title("🌐 Website Generator using Qwen3")
+st.title("🌐 Website Generator using Cerebras")
 
 # Small helper to build a starter brief from presets
 def build_brief(user_idea: str, preset: str, style: str) -> str:
@@ -146,27 +160,25 @@ Improve the following **single-file website** based on the user's request.
                         st.error("❌ Invalid HTML received. Try rephrasing your request.")
                     else:
                         st.session_state.site_code = site_html
-                        st.session_state.messages.append({
-                            "role": "assistant",
-                            "content": "✅ Website updated! See below 👇",
-                        })
+                        st.session_state.messages.append(
+                            {"role": "assistant", "content": "✅ Website updated! See below 👇"}
+                        )
                         st.rerun()
                 except Exception as e:
-                    st.error(f"OpenAI API Error: {str(e)}")
+                    st.error(f"Cerebras API Error: {str(e)}")
 
     # ========== Show Website ==========
     if st.session_state.site_code:
         st.divider()
         st.subheader("🌐 Your Website")
-        # Taller preview and allow scrolling for longer pages
         st.components.v1.html(st.session_state.site_code, height=900, scrolling=True)
 
         st.download_button(
             label="⬇️ Download Website HTML",
             data=st.session_state.site_code,
             file_name="ai_site.html",
-            mime="text/html"
+            mime="text/html",
         )
 
 else:
-    st.error("Please enter your OpenRouter API Key in the sidebar to start generating websites.")
+    st.error("Please enter your **Cerebras API Key** in the sidebar to start generating websites.")
